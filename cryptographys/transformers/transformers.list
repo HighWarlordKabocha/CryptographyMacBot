@@ -1,0 +1,21 @@
+ASCII
+Atbash
+Base64
+Binary
+Caesar
+Hex
+Morse
+Octal
+Rail
+Rot13
+
+
+
+
+Room for improvement:
+Reverse		- When the first letter is capitalized, it... Makes the cipher pretty obvious.
+
+
+
+NOT WORKING
+vigenere	- How to determin what key to use?
