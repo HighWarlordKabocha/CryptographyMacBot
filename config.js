@@ -1,3 +1,10 @@
+/**    
+ * ensure you have am .env file with the following variables in this bot's main directory:
+ * BOT_TOKEN=
+ * CLIENT_ID=
+ * GUILD_ID=
+ */    
+
 require('dotenv').config();
 
 module.exports = {
