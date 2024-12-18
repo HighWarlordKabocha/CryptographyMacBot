@@ -1,5 +1,5 @@
 {
   "wordlist": "pokemon.txt",
-  "ruleSet": "allRules.js",
+  "ruleSet": "testRules",
   "description": "wordlist is the plaintext source. ruleSet points to cryptography methods."
 }
