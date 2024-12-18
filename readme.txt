@@ -2,109 +2,123 @@
 
 KABOCHA BOT
 
-A Discord bot designed to expose users to aspects of cybersecurity through engaging quests and cryptography challenges. This bot includes features such as /quest for custom challenges and /cryptography for automated cryptography tasks.
+	A Discord bot designed to expose users to aspects of cybersecurity through engaging quests and cryptography challenges. This bot includes features such as /quest for custom challenges and /cryptography for automated cryptography tasks.
 
 FEATURES
 
-Quests: Present users with scenarios requiring analytical and cybersecurity skills.
+	Quests: Present users with scenarios requiring analytical and cybersecurity skills.
 
-Cryptography Challenges: Generate random encoded messages for users to decode.
+	Cryptography Challenges: Generate random encoded messages for users to decode.
 
-Leaderboards: Track user progress and showcase top performers.
+	Leaderboards: Track user progress and showcase top performers.
 
 PREREQUISITES
 
-Before you can run this bot, ensure you have the following:
+	Before you can run this bot, ensure you have the following:
 
-Node.js: Version 16.9.0 or newer.
+	Node.js: Version 16.9.0 or newer.
 
-npm: Included with Node.js.
+	npm: Included with Node.js.
 
-A Discord Bot Token: Create a bot on the Discord Developer Portal.
+	A Discord Bot Token: Create a bot on the Discord Developer Portal.
 
-Git (optional): To clone the repository.
+	Git (optional): To clone the repository.
 
 SETUP INSTRUCTIONS
 
-Clone the Repository
+	Clone the Repository
 
-git clone https://github.com/username/repository-name.git
-cd repository-name
+		git clone https://github.com/username/repository-name.git
+		cd repository-name
 
-Install Dependencies
+	Install Dependencies
 
-npm install
+		npm install
 
-Create a .env File
-Create a .env file in the root directory of the project and add the following:
+	Create a .env File
+	Create a .env file in the root directory of the project and add the following:
 
-BOT_TOKEN=your-bot-token
-CLIENT_ID=your-client-id
-GUILD_ID=your-guild-id
+		BOT_TOKEN=your-bot-token
+		CLIENT_ID=your-client-id
+		GUILD_ID=your-guild-id
 
-Replace your-bot-token, your-client-id, and your-guild-id with the respective values from the Discord Developer Portal.
+	Replace your-bot-token, your-client-id, and your-guild-id with the respective values from the Discord Developer Portal.
 
-Start the Bot
+	Start the Bot
 
-node index.js
+		node index.js
 
-Deploy Commands
-If commands are not appearing in Discord, deploy them:
+	Deploy Commands
+	
+	If commands are not appearing in Discord, deploy them:
 
-node deploy-commands.js
+		node deploy-commands.js
+
+CRYPTOGRAPHY INSTRUCTIONS
+
+	data/activeCryptography.json points to the wordlist (source of plain text strings) and ruleSets (methods to encode/encrypt plain text strings)
+	ruleSets points to whatever transformer methods you want to randomly choose from
+	I intended this function to automatically generate basic cryptography challenges
+	
+QUEST INSTRUCTIONS
+
+	data/activeQuest.json points to a specific quest
+	Quests have a given scenario and a correct answer.
+	I intended this function to be used with cybersecurity challenges that would be harder than basic /cryptography functions
+	
 
 BOT COMMANDS
 
-/quest
+	/quest
 
-Scenario: Presents the current quest scenario.
+		Scenario: Presents the current quest scenario.
 
-Answer: Submits an answer to the current quest.
+		Answer: Submits an answer to the current quest.
 
-Leaderboard: Displays the quest leaderboard.
+		Leaderboard: Displays the quest leaderboard.
 
-Tip: Provides a hint for the quest.
+		Tip: Provides a hint for the quest.
 
-/cryptography
+	/cryptography
 
-Question: Presents a random cryptography challenge.
+		Question: Presents a random cryptography challenge.
 
-Answer: Submits a decoded answer to the challenge.
+		Answer: Submits a decoded answer to the challenge.
 
-Stats: Shows the user's cryptography stats.
+		Stats: Shows the user's cryptography stats.
 
 CONTRIBUTING
 
-Contributions are welcome! To contribute:
+	Contributions are welcome! To contribute:
 
-Fork the repository.
+	Fork the repository.
 
-Create a feature branch:
+	Create a feature branch:
 
-git checkout -b feature-name
+	git checkout -b feature-name
 
-Commit your changes:
+	Commit your changes:
 
-git commit -m "Add a new feature"
+	git commit -m "Add a new feature"
 
-Push to the branch:
+	Push to the branch:
 
-git push origin feature-name
+	git push origin feature-name
 
-Create a Pull Request.
+	Create a Pull Request.
 
 SECURITY
 
-If you discover a security vulnerability, please open an issue or contact the repository owner directly.
+	If you discover a security vulnerability, please open an issue or contact the repository owner directly.
 
 LICENSE
 
-Copyright (c) 2024 H. W. Kabocha
+	Copyright (c) 2024 H. W. Kabocha
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ACKNOWLEDGEMENTS

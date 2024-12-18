@@ -1,11 +1,12 @@
 const dbManager = require('../databaseManager');
 const fs = require('fs');
 const path = require('path');
+const getStartOfDay = require('../utils/getStartOfDay'); // Utility to get the start of the day
 
 // Load activeCryptography configuration
 const activeCryptography = require(path.join(__dirname, '../data/activeCryptography.json'));
 
-// Dynamically load the ruleSet based on activeCryptography.json
+// Load the active rule set dynamically
 const ruleSetPath = path.join(__dirname, `../cryptographys/ruleSets/${activeCryptography.ruleSet}.js`);
 let ruleSet = {};
 try {
@@ -20,7 +21,7 @@ try {
 const transformersDir = path.join(__dirname, '../cryptographys/transformers');
 const transformers = {};
 
-// Dynamically require all transformer files
+// Dynamically load all transformer files
 fs.readdirSync(transformersDir).forEach((file) => {
     if (file.endsWith('.js')) {
         const transformer = require(path.join(transformersDir, file));
@@ -67,12 +68,18 @@ module.exports = {
         },
     ],
 
+    /**
+     * Executes the cryptography command.
+     * Handles subcommands for generating challenges, answering challenges, and viewing stats.
+     * 
+     * @param {Object} interaction - The interaction object representing the user's command
+     */
     execute: async (interaction) => {
         const subcommand = interaction.options.getSubcommand();
         const userId = interaction.user.id;
         const username = interaction.user.username;
 
-        // Ensure the user is in the users table
+        // Ensure the user exists in the database
         dbManager.addUser(userId, username);
 
         // ==========================
@@ -87,12 +94,31 @@ module.exports = {
                 }
 
                 if (row) {
-                    return interaction.reply({
-                        content: 'You already have an active challenge! Solve it before requesting a new one.',
-                        ephemeral: true,
+                    // Fetch and redisplay the existing challenge
+                    const fetchChallenge = `
+                        SELECT encodedMessage, methodSequence
+                        FROM cryptographyChallenges
+                        WHERE cryptographyID = ?
+                    `;
+                    dbManager.db.get(fetchChallenge, [row.cryptographyID], (err, challengeRow) => {
+                        if (err || !challengeRow) {
+                            console.error('Error fetching active challenge details:', err?.message || 'Challenge not found.');
+                            return interaction.reply({
+                                content: 'You already have an active challenge, but an error occurred while retrieving it.',
+                                ephemeral: true,
+                            });
+                        }
+
+                        return interaction.reply({
+                            content: `You already have an active challenge! Solve it before requesting a new one.\n\n**Active Challenge:**\n\`${challengeRow.encodedMessage}\``,
+                            ephemeral: true,
+                        });
                     });
+
+                    return; // Stop further execution if the user already has a challenge
                 }
 
+                // Generate a new challenge
                 const originalMessage = wordList[Math.floor(Math.random() * wordList.length)];
 
                 // Filter transformers based on the active ruleSet
@@ -126,7 +152,7 @@ module.exports = {
                     dbManager.assignChallenge(userId, newCryptographyID);
 
                     return interaction.reply({
-                        content: `:jigsaw: Can you decode this message?\n\`${encodedMessage}\`\n(Submit your answer with \`/cryptography answer\`.)\n**Method:** ${method}`,
+                        content: `:jigsaw: Can you decode this message?\n\`${encodedMessage}\`\n(Submit your answer with \`/cryptography answer\`.)`,
                     });
                 });
             });
@@ -160,36 +186,78 @@ module.exports = {
                 dbManager.logAttempt(userId, row.cryptographyID, userInput, isCorrect);
 
                 if (isCorrect) {
-                    const updateStats = `
-                        INSERT INTO cryptographyTracker (userID, attemptCount, correctCount, streakCount, longestStreak, lastIssuedAt)
-                        VALUES (?, 1, 1, 1, 1, CURRENT_TIMESTAMP)
-                        ON CONFLICT(userID) DO UPDATE SET
-                            attemptCount = attemptCount + 1,
-                            correctCount = correctCount + 1,
-                            streakCount = streakCount + 1,
-                            longestStreak = CASE 
-                                WHEN streakCount + 1 > longestStreak THEN streakCount + 1 
-                                ELSE longestStreak 
-                            END,
-                            lastIssuedAt = CURRENT_TIMESTAMP;
+                    const today = getStartOfDay();
+
+                    const getStreakData = `
+                        SELECT lastCompletedAt, dailyStreak, longestDailyStreak
+                        FROM cryptographyTracker
+                        WHERE userID = ?
                     `;
-                    dbManager.db.run(updateStats, [userId], (err) => {
+
+                    dbManager.db.get(getStreakData, [userId], (err, streakRow) => {
                         if (err) {
-                            console.error('Error updating stats:', err.message);
-                            return interaction.reply({ content: 'An error occurred while updating your stats.', ephemeral: true });
+                            console.error('Error fetching streak data:', err.message);
+                            return interaction.reply({ content: 'An error occurred while updating your streak.', ephemeral: true });
                         }
 
-                        dbManager.db.run(`DELETE FROM cryptographyActive WHERE userID = ?`, [userId]);
-                        return interaction.reply({ content: ':tada: Correct! Well done!', ephemeral: true });
+                        const lastCompletedAt = streakRow?.lastCompletedAt ? new Date(streakRow.lastCompletedAt) : null;
+                        let newDailyStreak = 1; // Default streak to 1 for first completion
+                        let newLongestDailyStreak = streakRow?.longestDailyStreak || 0;
+
+                        if (lastCompletedAt) {
+                            const diffInDays = (today - lastCompletedAt) / (1000 * 60 * 60 * 24);
+
+                            if (diffInDays === 1) {
+                                newDailyStreak = streakRow.dailyStreak + 1;
+                                newLongestDailyStreak = Math.max(newDailyStreak, newLongestDailyStreak);
+                            } else if (diffInDays > 1) {
+                                newDailyStreak = 1;
+                            } else {
+                                newDailyStreak = streakRow.dailyStreak;
+                                newLongestDailyStreak = streakRow.longestDailyStreak;
+                            }
+                        }
+
+                        const updateStreakData = `
+                            INSERT INTO cryptographyTracker (userID, attemptCount, correctCount, dailyStreak, longestDailyStreak, lastCompletedAt)
+                            VALUES (?, 1, 1, ?, ?, ?)
+                            ON CONFLICT(userID) DO UPDATE SET
+                                attemptCount = attemptCount + 1,
+                                correctCount = correctCount + 1,
+                                dailyStreak = ?,
+                                longestDailyStreak = CASE
+                                    WHEN dailyStreak > longestDailyStreak THEN dailyStreak
+                                    ELSE longestDailyStreak
+                                END,
+                                lastCompletedAt = ?;
+                        `;
+
+                        dbManager.db.run(
+                            updateStreakData,
+                            [userId, newDailyStreak, newLongestDailyStreak, today, newDailyStreak, today],
+                            (err) => {
+                                if (err) {
+                                    console.error('Error updating streak data:', err.message);
+                                    return interaction.reply({ content: 'An error occurred while updating your stats.', ephemeral: true });
+                                }
+
+                                // Congratulate user for new milestones
+                                if (newDailyStreak === 7) {
+                                    interaction.channel.send(`🎉 Congratulations, <@${userId}>! You've completed cryptography challenges for 7 consecutive days!`);
+                                }
+
+                                dbManager.db.run(`DELETE FROM cryptographyActive WHERE userID = ?`, [userId]);
+                                return interaction.reply({ content: ':tada: Correct! Well done!', ephemeral: true });
+                            }
+                        );
                     });
                 } else {
                     const resetStreak = `
-                        UPDATE cryptographyTracker SET streakCount = 0 WHERE userID = ?
+                        UPDATE cryptographyTracker SET dailyStreak = 0 WHERE userID = ?
                     `;
                     dbManager.db.run(resetStreak, [userId], (err) => {
                         if (err) {
                             console.error('Error resetting streak:', err.message);
-                            return interaction.reply({ content: 'An error occurred while resetting your streak.', ephemeral: true });
                         }
 
                         return interaction.reply({ content: ':x: Incorrect answer. Try again!', ephemeral: true });
@@ -203,7 +271,7 @@ module.exports = {
         // ==========================
         else if (subcommand === 'stats') {
             const queryStats = `
-                SELECT attemptCount, correctCount, streakCount, longestStreak
+                SELECT attemptCount, correctCount, dailyStreak, longestDailyStreak
                 FROM cryptographyTracker WHERE userID = ?
             `;
             dbManager.db.get(queryStats, [userId], (err, row) => {
@@ -216,11 +284,7 @@ module.exports = {
                 }
 
                 return interaction.reply({
-                    content: `**Your Cryptography Stats:**\n
-                    - Total Attempts: ${row.attemptCount}\n
-                    - Correct Answers: ${row.correctCount}\n
-                    - Current Streak: ${row.streakCount}\n
-                    - Longest Streak: ${row.longestStreak}`,
+                    content: `**Your Cryptography Stats:**\n- Total Correct Answers: ${row.correctCount}\n- Current Daily Streak: ${row.dailyStreak}\n- Longest Daily Streak: ${row.longestDailyStreak}`,
                     ephemeral: true,
                 });
             });
